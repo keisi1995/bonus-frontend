@@ -1,0 +1,119 @@
+<div class="backdrop" (click)="closed.emit()"></div>
+
+<div class="modal card" role="dialog" aria-modal="true" aria-labelledby="bonus-modal-title">
+  <header class="modal-header">
+    <h3 id="bonus-modal-title">Registrar bono</h3>
+    <button type="button" class="close" aria-label="Cerrar" (click)="closed.emit()">×</button>
+  </header>
+
+  <!-- 1. Búsqueda del empleado -->
+  <form class="row" [formGroup]="searchForm" (ngSubmit)="searchEmployee()">
+    <label class="field">
+      Área *
+      <select formControlName="departmentCode">
+        <option value="">Selecciona…</option>
+        @for (department of departments(); track department.departmentCode) {
+          <option [value]="department.departmentCode">{{ department.departmentName }}</option>
+        }
+      </select>
+      @if (hasError(searchForm.controls.departmentCode, 'required')) {
+        <small class="error">El área es obligatoria.</small>
+      }
+    </label>
+
+    <label class="field">
+      N.° de empleado *
+      <input type="number" min="1" formControlName="employeeNumber" placeholder="Ej. 101" />
+      @if (hasError(searchForm.controls.employeeNumber, 'required')) {
+        <small class="error">El número es obligatorio.</small>
+      } @else if (hasError(searchForm.controls.employeeNumber, 'min')) {
+        <small class="error">Debe ser mayor a 0.</small>
+      }
+    </label>
+
+    <button type="submit" class="btn btn-secondary" [disabled]="searching()">
+      {{ searching() ? 'Buscando…' : 'Buscar' }}
+    </button>
+  </form>
+
+  @if (employee(); as emp) {
+    <dl class="employee">
+      <div><dt>Nombre</dt><dd>{{ emp.fullName }}</dd></div>
+      <div><dt>Fecha de ingreso</dt><dd>{{ emp.hireDate | date: 'dd/MM/yyyy' }}</dd></div>
+      <div><dt>Sueldo mensual</dt><dd>{{ emp.monthlySalary | number: '1.2-2' }}</dd></div>
+      <div><dt>% de retención</dt><dd>{{ emp.taxRate | number: '1.0-2' }} %</dd></div>
+    </dl>
+
+    <!-- 2. Datos del bono -->
+    <form [formGroup]="bonusForm" (ngSubmit)="save()">
+      <div class="row">
+        <label class="field">
+          Periodo *
+          <input type="month" formControlName="period" [max]="maxPeriod" />
+          @if (hasError(bonusForm.controls.period, 'required')) {
+            <small class="error">El periodo es obligatorio.</small>
+          } @else if (hasError(bonusForm.controls.period, 'pattern')) {
+            <small class="error">Usa el formato YYYY-MM.</small>
+          } @else if (hasError(bonusForm.controls.period, 'futurePeriod')) {
+            <small class="error">No puede ser posterior al mes actual.</small>
+          }
+        </label>
+
+        <label class="field">
+          Tipo de bono *
+          <select formControlName="bonusTypeId">
+            @for (type of bonusTypes(); track type.bonusTypeId) {
+              <option [ngValue]="type.bonusTypeId">{{ type.bonusTypeDescription }}</option>
+            }
+          </select>
+        </label>
+
+        <label class="field">
+          {{ isPercentage() ? 'Porcentaje (%)' : 'Monto' }} *
+          <input type="number" step="0.01" min="0.01" formControlName="bonusValue" />
+          @let value = bonusForm.controls.bonusValue;
+          @if (hasError(value, 'required')) {
+            <small class="error">{{ isPercentage() ? 'El porcentaje' : 'El monto' }} es obligatorio.</small>
+          } @else if (hasError(value, 'positive')) {
+            <small class="error">Debe ser mayor a 0.</small>
+          } @else if (hasError(value, 'decimals')) {
+            <small class="error">Máximo 2 decimales.</small>
+          } @else if (hasError(value, 'maxPercentage')) {
+            <small class="error">No puede superar 100 %.</small>
+          } @else if (hasError(value, 'maxSalary')) {
+            <small class="error">No puede superar el sueldo mensual ({{ emp.monthlySalary | number: '1.2-2' }}).</small>
+          }
+        </label>
+
+        <label class="field">
+          Motivo *
+          <select formControlName="reasonCode">
+            <option value="">Selecciona…</option>
+            @for (reason of bonusReasons(); track reason.reasonCode) {
+              <option [value]="reason.reasonCode">{{ reason.reasonDescription }}</option>
+            }
+          </select>
+          @if (hasError(bonusForm.controls.reasonCode, 'required')) {
+            <small class="error">El motivo es obligatorio.</small>
+          }
+        </label>
+      </div>
+
+      <!-- 3. Vista previa del cálculo -->
+      <div class="preview">
+        <div><span>Bruto</span><strong>{{ (preview()?.grossAmount ?? 0) | number: '1.2-2' }}</strong></div>
+        <div><span>Retención ({{ emp.taxRate | number: '1.0-2' }} %)</span><strong>{{ (preview()?.taxAmount ?? 0) | number: '1.2-2' }}</strong></div>
+        <div><span>Neto a pagar</span><strong>{{ (preview()?.netAmount ?? 0) | number: '1.2-2' }}</strong></div>
+      </div>
+
+      <footer class="modal-footer">
+        <button type="button" class="btn btn-secondary" (click)="closed.emit()">Cancelar</button>
+        <button type="submit" class="btn btn-primary" [disabled]="saving()">
+          {{ saving() ? 'Guardando…' : 'Guardar' }}
+        </button>
+      </footer>
+    </form>
+  } @else {
+    <p class="hint">Busca al empleado por área y número para registrar su bono.</p>
+  }
+</div>
