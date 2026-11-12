@@ -1,13 +1,13 @@
 <section class="card">
   <header class="card-header">
     <h2>Bonos de desempeño</h2>
-    <button type="button" class="btn btn-primary" disabled>Nuevo registro</button>
+    <button type="button" class="btn btn-primary" (click)="isModalOpen.set(true)">Nuevo registro</button>
   </header>
 
-  <div class="filters">
+  <form class="filters" [formGroup]="filtersForm" (ngSubmit)="search()">
     <label>
       Área
-      <select>
+      <select formControlName="departmentCode">
         <option value="">Todas</option>
         @for (department of departments(); track department.departmentCode) {
           <option [value]="department.departmentCode">{{ department.departmentName }}</option>
@@ -16,18 +16,94 @@
     </label>
 
     <label>
+      N.° de empleado
+      <input type="number" min="1" formControlName="employeeNumber" placeholder="Ej. 101" />
+    </label>
+
+    <label>
+      Periodo
+      <input type="month" formControlName="period" />
+    </label>
+
+    <label>
       Estado
-      <select>
+      <select formControlName="bonusStateCode">
         <option value="">Todos</option>
         @for (state of bonusStates(); track state.stateCode) {
           <option [value]="state.stateCode">{{ state.stateDescription }}</option>
         }
       </select>
     </label>
+
+    <div class="filter-actions">
+      <button type="submit" class="btn btn-primary">Buscar</button>
+      <button type="button" class="btn btn-secondary" (click)="clear()">Limpiar</button>
+    </div>
+  </form>
+
+  <div class="table-wrapper" [class.is-loading]="loading()">
+    <table class="table">
+      <thead>
+        <tr>
+          <th>Acciones</th>
+          <th>Estado</th>
+          <th>Periodo</th>
+          <th>Empleado</th>
+          <th>Nombre</th>
+          <th>Tipo</th>
+          <th class="num">Monto / %</th>
+          <th>Motivo</th>
+          <th class="num">Bruto</th>
+          <th class="num">Retención</th>
+          <th class="num">Neto</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (bonus of page()?.data; track bonus.bonusId) {
+          <tr>
+            <td class="actions">
+              <button type="button" class="btn btn-sm btn-secondary" [disabled]="!isRegistered(bonus)" (click)="cancel(bonus)">Anular</button>
+              <button type="button" class="btn btn-sm btn-danger" [disabled]="!isRegistered(bonus)" (click)="delete(bonus)">Eliminar</button>
+              <button type="button" class="btn btn-sm btn-primary" [disabled]="!isRegistered(bonus)" (click)="pay(bonus)">Pagar</button>
+            </td>
+            <td><span class="badge" [attr.data-state]="bonus.bonusStateCode">{{ bonus.bonusStateDescription }}</span></td>
+            <td>{{ bonus.period }}</td>
+            <td>{{ bonus.departmentName }} · {{ bonus.employeeNumber }}</td>
+            <td>{{ bonus.employeeFullName }}</td>
+            <td>{{ bonus.bonusTypeDescription }}</td>
+            <td class="num">
+              {{ bonus.bonusValue | number: '1.2-2' }}{{ bonus.bonusTypeId === BonusTypes.SalaryPercentage ? ' %' : '' }}
+            </td>
+            <td>{{ bonus.reasonDescription }}</td>
+            <td class="num">{{ bonus.grossAmount | number: '1.2-2' }}</td>
+            <td class="num">{{ bonus.taxAmount | number: '1.2-2' }}</td>
+            <td class="num">{{ bonus.netAmount | number: '1.2-2' }}</td>
+          </tr>
+        } @empty {
+          <tr>
+            <td colspan="11" class="empty">{{ loading() ? 'Cargando…' : 'No se encontraron bonos.' }}</td>
+          </tr>
+        }
+      </tbody>
+    </table>
   </div>
 
-  <p class="placeholder">
-    Los combos ya consumen <code>GET /api/v1/Catalog</code>. Implementa aquí el listado paginado,
-    las acciones por fila y el modal de registro descritos en el enunciado.
-  </p>
+  @if (page(); as current) {
+    <footer class="pagination">
+      <span>Total: {{ current.totalRecords }} registro(s)</span>
+      <div class="pagination-controls">
+        <button type="button" class="btn btn-sm btn-secondary" [disabled]="current.pageNumber <= 1" (click)="goToPage(current.pageNumber - 1)">
+          Anterior
+        </button>
+        <span>Página {{ current.totalPages === 0 ? 0 : current.pageNumber }} de {{ current.totalPages }}</span>
+        <button type="button" class="btn btn-sm btn-secondary" [disabled]="current.pageNumber >= current.totalPages" (click)="goToPage(current.pageNumber + 1)">
+          Siguiente
+        </button>
+      </div>
+    </footer>
+  }
 </section>
+
+@if (isModalOpen()) {
+  <app-bonus-form-modal [departments]="departments()" (saved)="onSaved()" (closed)="isModalOpen.set(false)" />
+}

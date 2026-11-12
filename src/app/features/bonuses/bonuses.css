@@ -12,6 +12,7 @@
 .filters {
   display: flex;
   flex-wrap: wrap;
+  align-items: flex-end;
   gap: 16px;
   margin-bottom: 16px;
 }
@@ -24,6 +25,66 @@
   color: var(--text-muted);
 }
 
-.placeholder {
+.filter-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.table-wrapper {
+  overflow-x: auto;
+  transition: opacity 0.15s;
+}
+
+.table-wrapper.is-loading {
+  opacity: 0.6;
+}
+
+.actions {
+  display: flex;
+  gap: 4px;
+}
+
+.empty {
+  text-align: center;
   color: var(--text-muted);
+  padding: 24px;
+}
+
+.badge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 0.8rem;
+  background: #e4e7eb;
+}
+
+.badge[data-state='0201'] {
+  background: #e3f2fd;
+  color: #0d47a1;
+}
+
+.badge[data-state='0202'] {
+  background: #e8f5e9;
+  color: #1b5e20;
+}
+
+.badge[data-state='0203'] {
+  background: #fdecea;
+  color: #8a1c13;
+}
+
+.pagination {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  margin-top: 16px;
+  font-size: 0.9rem;
+}
+
+.pagination-controls {
+  display: flex;
+  align-items: center;
+  gap: 12px;
 }
